@@ -203,7 +203,6 @@ ON o.SalesPersonID = e.EmployeeID
  */
 
  SELECT 
-
  FIrstName,
  LastName
  FROM Sales.Customers
@@ -214,3 +213,132 @@ ON o.SalesPersonID = e.EmployeeID
  FirstName,
  LastName
  FROM Sales.Employees
+
+ /* #3 RULE|Data TYPES
+ Data types in each column must be compatible.
+*/
+
+SELECT 
+CustomerID,
+LastName
+FROM Sales.Customers
+
+UNION
+
+SELECT 
+EmployeeID,
+LastName
+FROM Sales.Employees
+
+/*4 RULE | ORDER PF COLUMNS 
+The order of the column in each query must be the same
+
+5 RULE | COLUMN ALIASES
+The column names in the result set are determined
+by the column names specified in the first query.
+
+*/
+SELECT 
+CustomerID AS ID,
+LastName AS Last_Name
+FROM Sales.Customers
+
+UNION
+
+SELECT 
+EmployeeID,
+LastName 
+FROM Sales.Employees
+
+/*  # 6 RULE | CORRECT COLUMNS
+
+- Even if all rules are met and sql shows no error,
+the result may be incorrect.
+
+-Incorrect Column selection leads to inaccurate results.
+*/
+use SalesDB;
+SELECT 
+FirstName,
+LastName
+From Sales.Customers
+
+UNION
+
+SELECT 
+LastName,
+FirstName 
+FROM Sales.Employees
+
+-- SET OPerator UNION
+-- Return ALl distinct rows from both queries.
+-- Remove duplicate rows from the result.
+
+SELECT
+FIRSTName,
+LastName
+from  Sales.Customers
+UNION
+SELECT 
+FIRSTName,
+LastName
+FROM Sales.Employees;
+
+-- UNION ALl 
+--Return All Rows form both querie, Including Duplicates.
+-- UNION ALl is generally faster than UNION
+SELECT
+FIRSTName,
+LastName
+from  Sales.Customers
+UNION ALL
+SELECT 
+FIRSTName,
+LastName
+FROM Sales.Employees;
+
+-- SET  oprator :- EXCEPT
+-- Return all distinct rows from the first query
+-- That are not found in the second query.
+
+-- IT Is the only one where the order of quiries affect the final result.
+SELECT
+FIRSTName,
+LastName
+from  Sales.Employees
+EXCEPT
+SELECT 
+FIRSTName,
+LastName
+FROM Sales.Customers;
+
+-- SET OPERATor :- INTERSECT
+-- Return only rows that are common in both queries.
+-- FIND The empoyees  who are also customers
+
+SELECT
+FIRSTName,
+LastName
+from  Sales.Employees
+INTERSECT
+SELECT 
+FIRSTName,
+LastName
+FROM Sales.Customers;
+
+-- MOST IMPORTANT USE CASES FOR SET OPRATORS
+-- COMBINATION 
+-- COMBINING aal the data before sub query.
+
+
+-- Order are stored in seprate tables(ORDERS and OrderArchives).
+-- Combine all oreder into one report without duplicates.
+
+SELECT*
+ FROM Sales.Orders
+ UNION
+ SELECT * 
+ FROM Sales.OrdersArchive
+
+ -- BEST Practices
+ -- Never use an asterisk(*) to combine tables;list needed columns insted
