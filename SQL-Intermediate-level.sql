@@ -342,3 +342,78 @@ SELECT*
 
  -- BEST Practices
  -- Never use an asterisk(*) to combine tables;list needed columns insted
+ use SalesDB;
+
+SELECT
+[ProductID]
+,[OrderID]
+,[CustomerID]
+,[SalesPersonID]
+,[OrderDate]
+,[ShipDate]
+,[OrderStatus]
+,[ShipAddress]
+,[BillAddress]
+,[Quantity]
+,[Sales]
+,[CreationTime]
+ FROM Sales.Orders
+ UNION
+ SELECT 
+ [OrderID]
+,[ProductID]
+,[CustomerID]
+,[SalesPersonID]
+,[OrderDate]
+,[ShipDate]
+,[OrderStatus]
+,[ShipAddress]
+,[BillAddress]
+,[Quantity]
+,[Sales]
+,[CreationTime]
+ FROM Sales.OrdersArchive
+
+ -- Source Flag 
+ -- Include additional column to indicate the source of each row
+ SELECT
+ 'Orders' AS SourceTable
+ ,[OrderID]
+,[ProductID]
+,[CustomerID]
+,[SalesPersonID]
+,[OrderDate]
+,[ShipDate]
+,[OrderStatus]
+,[ShipAddress]
+,[BillAddress]
+,[Quantity]
+,[Sales]
+,[CreationTime]
+ FROM Sales.Orders
+ UNION
+ SELECT 
+'OrderArchives' AS SourceTable
+,[OrderID]
+,[ProductID]
+,[CustomerID]
+,[SalesPersonID]
+,[OrderDate]
+,[ShipDate]
+,[OrderStatus]
+,[ShipAddress]
+,[BillAddress]
+,[Quantity]
+,[Sales]
+,[CreationTime]
+ FROM Sales.OrdersArchive
+ Order by OrderID
+
+ --EXCEPT USE CASES
+ /* DELTA DETECTION
+ IDENTIFING the difference or changes (delta) 
+  between two batches of data.
+
+  DATA COMPLETENESS CHECK
+  */
+  -- Set Oprators are done here :)
