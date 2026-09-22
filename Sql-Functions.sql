@@ -166,4 +166,202 @@ SELECT
  FORMAT(CreationTime, 'MMMM') MMMM
  FROM Sales.Orders
 
+ /* SHOW craetion time using the format:
+ Day WED JAN Q1 2025 12:34:56 PM
+ */
 
+ SELECT
+ OrderID,
+ CreationTime,
+ 'Day ' + FORMAT(CreationTime, 'ddd MMM ') +
+ 'Q'+ DateName(quarter, CreationTime) +
+ FORMAT(CreationTime, ' yyyy hh:mm:ss tt')  CustomFormat 
+ FROM Sales.Orders
+
+ SELECT
+ FORMAT(OrderDate, 'MMM yy') OrderDate,
+ COUNT(*)
+ FROM Sales.Orders
+ GROUP BY FORMAT(OrderDate, 'MMM yy')
+
+ -- IN convert we can do both formating and casting  
+ SELECT
+ CreationTime,
+ CONVERT(DATE, CreationTime) AS [Datetime to Date CONVERT],
+ CONVERT(VARCHAR, CreationTime, 32) as [USA Std. Style:32],
+ CONVERT(VARCHAR, CreationTime, 34) as [EURO Std. Style:34]
+ FROM Sales.Orders
+
+ --CAST () 
+ -- CONVERTs a value to a specified data type.
+
+ SELECT
+ CAST('123' AS INT) AS [String to interger],
+ CAST (123 as VARCHAR) AS [Int to String],
+ CAST('2025-08-20' AS DATE) AS [String to Date],
+ CAST('2025-08-20' AS DATETIME2) AS [String to Datetime],
+ CreationTime,
+ CAST(CreationTime as DATE) as [Datetime to Date]
+ From Sales.Orders
+
+ -- DATEADD ()
+ -- Adds or substracts a specific time interval to from a date.
+
+ SELECT 
+ OrderId,
+ OrderDate,
+  DATEADD( day, -10, OrderDate)  AS TenDaysBefore,
+  DATEADD( month, 3, OrderDate)  AS ThreemonthLater,
+ DATEADD( year, 2, OrderDate)  AS TWOYEARSLater
+ FROM Sales.Orders
+
+ -- DATEDIFF()
+ -- Find the difference between two dates.
+ -- CAlculate the age of employees
+
+ SELECT
+ EmployeeID,
+ BirthDate,
+ DATEDIFF(year, BirthDate, GETDATE()) Age
+ FROM Sales.Employees
+ 
+ --Find the average shipping duration in days for each month
+ SELECT
+ MONTH(OrderDate) AS OrderDate,
+ AVG(DATEDIFF(day, OrderDate, ShipDate)) AvgShip
+ FROM Sales.Orders
+ GROUP BY MONTH(OrderDate)
+
+ --find the number of days between each order and previous order.
+ --LAG() ACCESS a value form the previous row
+ SELECT
+ Orderdate CurrentOrderDate,
+ LAG(OrderDate) OVER (ORDER BY OrderDate) PreviousOrderDate,
+ DATEDIFF(day,LAG(OrderDate) OVER (ORDER BY OrderDate), OrderDate) Nrofdays
+ FROM Sales.Orders
+
+ --Date Validation
+ --Is Date()
+ -- check if value is a date.
+ --return 1 if the string value is a valid date.
+
+ SELECT 
+ ISDATE('123') DateCheck1,
+ ISDATE('2025-08-20') DateCheck2,
+  ISDATE('1998') DateCheck3
+
+
+  -- ISNULL and COALESCE
+SELECT 
+ISNULL(Shipaddress,'unknown')
+from Sales.Orders;
+
+SELECT 
+Coalesce(Shipaddress,BillAddress, 'unknown')
+from Sales.Orders;
+
+-- isnull is limited to two values, but it is fast
+-- Coalesce unlimited values but it is slow.
+-- Coalesce is available in all databases.
+-- isnull is changed as per databases.
+
+use SalesDB
+
+SELECT * 
+from Sales.Orders
+
+-- Find the average score for the customers
+-- OVER() is window function we can use to show average value
+-- in each row.
+
+
+SELECT 
+CustomerID,
+Score, 
+AVG(Score) over() Avgscore,
+AVG(Coalesce(Score,0))over() Avgscore2
+From Sales.Customers;
+
+
+-- ISNULL | COALESCE
+-- USE CASE :- Habdle the null before doing mathematical operations.
+-- NULL + 5 -> NULL
+--NULL + 'b' -> NULL
+
+
+/*Display the fulll name of customers in a single field
+by merging their first and last names,
+and add 10 bonus points to each customer's score.
+*/
+SELECT*
+from Sales.Customers;
+
+SELECT 
+CustomerID,
+FirstName + ' ' + COALESCe(LastName, '') as fullname,
+SCORE,
+COALESCE(Score, 0 ) + 10 as NewScore
+From Sales.Customers;
+
+-- use case:- handle the null before joining tables.
+-- uSE CASE:- handle the null before shorting the data.
+
+-- SORT the customers from lowest to highest scores,
+--with nulls appearing last
+
+SELECT
+CustomerID,
+CASE WHEN SCORE IS NULL THEN 1 ELSE 0 END Flag,
+SCORE
+FROM Sales.Customers
+ORDER BY CASE WHEN SCORE IS NULL THEN 1 ELSE 0 END,
+SCORE ASC;
+
+
+--NULLIF() function
+-- COMPARE two expressions return:- 
+-- -null ,if they are equal.
+-- -first expression, if they are not equal.
+
+-- --USE CASE
+-- Preventing the error of dividing by zero.
+
+/* Find the sales price for each order by dividing the
+sales by quantity.
+*/
+SELECT *
+from Sales.Orders;
+
+SELECT 
+OrderID,
+Sales,
+Quantity,
+Sales/NULLIF(Quantity,0) as Price
+FROM Sales.Orders;
+
+-- IS NULL () function
+-- Return TRUE if the  value IS NULL,
+-- otherwise it returns FALSE.
+
+-- Isentify the customers who have no score
+SELECT * 
+from Sales.Customers
+where score is null 
+
+--list all customers who have scores 
+SELECT * 
+from Sales.Customers
+where score is not null 
+
+--list all details for customers who have not placed any orders
+Select 
+c.*,
+o.OrderID
+from Sales.Customers c
+LEFT JOIN Sales.Orders o
+ON c.CustomerID = o.CustomerID
+where o.CustomerID is null
+
+use SalesDB
+select * from Sales.Orders
+select * from Sales.Customers
