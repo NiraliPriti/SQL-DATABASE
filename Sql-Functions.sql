@@ -365,3 +365,136 @@ where o.CustomerID is null
 use SalesDB
 select * from Sales.Orders
 select * from Sales.Customers
+
+-- Null vs empty string vs blank spaces 
+
+With Orders AS (
+SELECT  1 Id, 'A' Category UNION 
+Select 2, NULL UNION
+Select 3, '' union
+select 4, '  ' 
+)
+Select 
+*,
+TRIM(Category) Policy1,
+NULLIF(TRIM(Category) ,'') Policy2,
+COALESCE(NULLIF(TRIM(Category) ,'') , 'unknown') Policy3
+from Orders
+
+/*
+null means unknown , special marker , very minimal ,  Best ,is null 
+empty string known empty values, string(0),  occupies memory , fast, = ''
+blank space values,  string(1 or more), occupies memory each space , slow on performance, = ' '
+*/
+
+--Data Policies
+ -- Set of rules that defines how data should be handled
+ --  #1 Data Policy
+ -- only use null and empty string but avoid blank spaces.
+
+-- Trim remove unwanted leading and trailing spaces from a string
+
+--#2 Data Policy
+-- Only use NULLS and avoid empty strings and blank spaces
+
+--#3 Data policy
+-- Use the default value 'unknown '
+--and avoid using , nulls, empty strings and blank spaces.
+
+-- #2 Data policy use case
+-- replacing empty strings and blanks with null during data preparation before inserting into a database to optimize storage and performance.
+
+-- #3  Data policy use case 
+-- replacing empty strings, blanks , null with default value during data preparation before using it in reporting to improve readibility and reduce confusion
+
+-- Case statements:- 
+
+
+-- TASK:- Generate a report showing the total sales for each category:
+-- High :- if the sales higher than 50
+-- Medium :- if the sales between 20 and 50
+-- Low :- if the sales equal or lower than 20
+-- Sort the result from lowest to highest.
+
+Select 
+Category,
+Sum(Sales) as TotalSales
+from(
+	SELECT 
+	OrderID,
+	Sales,
+	CASE
+		When Sales > 50 THEN 'High'
+		When Sales > 20 Then 'Medium'
+		Else 'Low'
+	ENd Category
+	FROM Sales.Orders
+)t
+GROUP BY Category
+Order By TotalSales DESC
+
+-- The Data Type of the result must be matching
+-- Mapping:- Transform the values from one form to another
+
+-- Task :- retrive employees details with gender displayed as full text
+
+SELECT
+EmployeeID,
+FirstName,
+LastName,
+Gender,
+Case
+	when Gender = 'F' THEN 'Female'
+	WHEN Gender = 'M' THEN 'Male'
+	Else 'Not Available'
+END GenderFullText
+FROM Sales.Employees
+
+-- Retrive customer details with abbreviated country code
+  
+SELECT
+	CustomerID,
+	FirstName,
+	LastName,
+	Country,
+	CASE 
+		WHEN Country = 'Germany' Then 'DE'
+		when Country = 'USA' THEN 'US'
+		Else 'N/A'
+	END CountryAbbr
+FROM Sales.Customers
+
+SELECT Distinct Country FROM Sales.Customers   
+
+--Handling nulls :- Replace Nulls with a specific value.
+
+-- TASk :- Find the average scores of customers and treat nulls as O
+--and additionally provide details such CustomerID & LastName.
+
+Select 
+CustomerID,
+LastName,
+Score,
+CASE 
+	when score is null then 0
+	else score
+END Scoreclean,
+AVG(CASE 
+		when score is null then 0
+		else score
+	END) over() AvgCustomerClean,
+AVG(Score) over() AvgCustomer
+from Sales.Customers
+
+--Conditional Aggregation
+--Apply aggregate functions only on subsets of data that fulfill certain conditions 
+
+--Count how many times each customer has made an order with sales greater than 30.
+SELECT
+OrderID,
+CustomerID,
+Sales
+from 
+
+
+
