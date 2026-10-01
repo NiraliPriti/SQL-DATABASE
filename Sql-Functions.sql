@@ -491,10 +491,15 @@ from Sales.Customers
 
 --Count how many times each customer has made an order with sales greater than 30.
 SELECT
-OrderID,
-CustomerID,
-Sales
-from 
+	CustomerID,
+	SUM(case
+		when Sales > 30 Then 1
+		Else 0
+	End) TotalOrdersHighSales,
+	Count(*) TotalOrders
+from Sales.Orders
+Group By CustomerID
 
+use SalesDB
 
 
