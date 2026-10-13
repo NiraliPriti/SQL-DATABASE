@@ -500,6 +500,203 @@ SELECT
 from Sales.Orders
 Group By CustomerID
 
-use SalesDB
+use MyDatabase
+
+SELECt
+customer_id,
+count(*) as total_nr_orders,
+sum(sales) as total_sales,
+max(sales) as max_sales,
+min(sales) as min_sales,
+avg(sales) as avg_sales
+from orders
+group by customer_id
+
+-- window functions -- OVER() is a window function we can use to show average value in each row.
+
+-- Agregate functions are used to perform calculations on a set of values and return a single value. Common aggregate functions include
+--SUM, AVG, COUNT, MAX, and MIN.
+-- Rank functions are used to assign a rank or a position to each row in a result set based on a specified order.
+--include RANK(), DENSE_RANK(), and ROW_NUMBER(),cume_dist(),percent_rank(),ntile(n)
+-- Value(Analytics Functions) functions are used to perform calculations on a set of values and return a single value.
+-- Includes Lead(expr,offset,, default)
+-- Lag(expr,offset, default), First_Value(expr), Last_Value(expr)
+
+
+Select
+OrderID,
+OrderDate,
+ProductID,
+SUM(Sales) over(Partition by ProductID) as TotalSales
+From Sales.Orders
+
+Select 
+	OrderID,
+	OrderDate,
+	Sales,
+	Rank() Over( Order By Sales Desc) RankSales --default order asc
+FRom Sales.Orders
+
+
+-- window is more powerful and dynamic than group by, because it allows you to perform calculations on a subset of data without collapsing the result set into a single row per group.
+--This means that you can still see all the individual rows in the result set while also calculating aggregate values for each group.
+
+--Aggregate Window functions 
+-- Count
+-- Find the total number of Orders
+Select
+	OrderID,
+	OrderDate,
+	CustomerID,
+	count(*) over() TotalOrders,
+	COUNT(*) over(Partition by CustomerID) OrderByCustomers
+from Sales.Orders 
+
+/* find the total numbers of Customers
+Addditionally Provide all customers details
+*/
+SELECT
+	*,
+	count(*) over() TotalCustomers
+From Sales.Customers
+
+/* find the total number of scores for the customers
+*/
+
+
+SELECT 
+*,
+count(*) over() TotalCustomersStar,
+count(1) over() TotalCustomersOne,
+COUNT(Score) over() TotalScores,
+count(Country) over() TotalCountries
+from Sales.Customers
+
+--Check whether the table 'orders' contains any duplicate rows
+SELECT
+	OrderID,
+	Count(*) over (Partition by OrderID) CheckPK
+from Sales.Orders
+
+SELECT
+*
+From(
+SELECT
+	OrderID,
+	Count(*) over (Partition by OrderID) CheckPK
+from Sales.OrdersArchive
+)t where CheckPK > 1
+
+--SUM()
+SELECT
+	OrderID,
+	OrderDate,
+	Sales,
+	SUM(Sales) over() TotalSales,
+	SUM(Sales) over(Partition by ProductID) SalesByProducts
+From Sales.Orders                   
+
+--Find the percentage contribution of each product's sales to the total Sales
+
+SELECT
+	OrderID,
+	ProductID,
+	Sales,
+	SUM(Sales) over() TotalSales,
+	Round(Cast (Sales as float) / SUM(Sales) Over() * 100,2) PercentageOfTotal
+FROM Sales.Orders
+
+--AVG()
+--Find avg sales across all orders and 
+--find the average sales for each product
+
+SELECT
+	OrderID,
+	OrderDate,
+	Sales,
+	ProductID,
+	Avg(Sales) over() AverageSales,
+	AVg(Sales) Over(Partition by ProductID) AverageSalesbyProductID
+from Sales.Orders
+
+-- Find the average score for the customers
+-- Additionally provide details such as customerid and lastname
+
+select
+	CustomerID,
+	FirstName,
+	LastName,
+	Score,
+	Coalesce(Score,0) CustomerScore,
+	Avg(Score) over() AvgScore,
+	Avg(Coalesce(Score,0)) over() AvgScoreClean
+from Sales.Customers
+
+--Find all orders where sales higher than the average sales across all orders
+SELECT
+*
+FROM(
+	Select
+		OrderID,
+		ProductID,
+		Sales,
+		Avg(Sales) over() AverageSales
+	From Sales.Orders
+)t where Sales > AverageSales
+
+--Min() and Max()
+
+Select
+	OrderID,
+	ProductID,
+	Sales,
+	OrderDate,
+	Max(Sales) over() MaxSales,
+	Min(Sales) over() MinSales,
+	Min(Sales) over(Partition by ProductID) MinSalesByProduct,
+	Max(Sales) over(Partition by ProductID) MaxSalesByProduct
+from Sales.Orders
+
+-- Show the employees who have the highest salaries
+
+SELECT
+*
+from Sales.Employees
+where Salary = (SELECT MAX(Salary) FROM Sales.Employees)
+
+SELECT
+*
+from(
+	Select
+	*,
+	Max(Salary) over() MaxSalary
+	from Sales.Employees
+)t where Salary = MaxSalary
+
+
+--Find the deviation of each sales from the minimum and maximum sales amounts
+Select
+	OrderID,
+	OrderDate,
+	Sales,
+	Max(Sales) over() HighestSales,
+	Min(Sales) over() LowestSales,
+	Sales - Min(Sales) over() Deviationfrommin,
+	Max(Sales) over() - Sales DeviationfromMax
+from Sales.Orders
+
+--Running Total and Rolling total
+
+--Calculate moving average of sales for each product over time 
+-- including only next order
+Select
+	OrderID,
+	ProductID,
+	OrderDate,
+	Sales,
+	Avg(Sales) over (Partition by ProductID) AvgByProduct,
+	Avg(Sales) over(Partition by ProductID Order by OrderDate) MovingAvg,
+	Avg(Sales) over(Partition by ProductID Order by OrderDate rows between  current row and 1 following) RollingAge 
+From Sales.Orders
 
 
