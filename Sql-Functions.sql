@@ -699,4 +699,206 @@ Select
 	Avg(Sales) over(Partition by ProductID Order by OrderDate rows between  current row and 1 following) RollingAge 
 From Sales.Orders
 
+--Ranking Window functions
+--Row_Number()
+--Rank The Orders Based on their sales from highest to lowest
+Select
+	OrderID,
+	Sales,
+	ProductID,
+	ROW_NUMBER () over(Order by Sales DESC) row_number
+from Sales.Orders
+
+--Rank()
+--it handles ties.
+--it leaves gaps in ranking.
+
+Select
+	OrderID,
+	Sales,
+	ProductID,
+	ROW_NUMBER () over(Order by Sales DESC) row_number,
+	Rank() over(order by Sales  Desc) SalesRank_rank
+from Sales.Orders
+
+--Dense_Rank()
+--Assign rank to each row
+--it handle ties.
+--it doesn't leaves gaps in ranking.
+
+Select
+	OrderID,
+	Sales,
+	ProductID,
+	ROW_NUMBER ()	over(Order by Sales DESC) row_number,
+	Rank()			over(order by Sales  Desc) SalesRank_rank,
+	DENSE_RANK()	over(order by Sales desc) SalesDense_rank
+from Sales.Orders
+
+--Find the top highest dales for each product.
+--Top in Analysis
+--Analysis the top performers to do targeted marketing
+
+Select *
+from (
+Select 
+	OrderID,
+	ProductID,
+	Sales,
+	Row_Number() over(Partition by ProductID Order by Sales Desc) highsales
+from Sales.Orders
+)t where highsales = 1
+
+--Bottom-n analysis
+--Find the lowest 2 customers based on their total sales
+
+Select *
+from (
+Select 
+	CustomerID,
+	SUM(Sales) TotalSales,
+	ROw_Number() over (Order by Sum(Sales)) RankCustomers
+from Sales.Orders
+Group by 
+CustomerID
+)t where RankCustomers <= 2
+
+-- Generate unique id's
+--Assign unique IDs to the rows of the 'Orders Archive'table
+
+Select
+Row_Number()  over (Order by OrderID, OrderDate) UniqueID,
+*
+from Sales.OrdersArchive
+
+--Identify Duplicates
+--Identify duplicate rows in the table 'Orders Archive'
+--and return a clean result without any duplicates
+
+Select * 
+from (
+Select
+Row_Number() over(partition by OrderID order by CreationTime Desc) rn,
+*
+from Sales.OrdersArchive
+)t where rn = 1
+
+--Row_Number Use cases
+--#1 Top-N Analysis
+--#2 Bottom-N Analysis
+--#3 Assign unique IDs
+--#4 Quality Checks: Identify Duplicates
+
+--Ntile
+Select
+OrderID,
+Sales,
+NTILE(4) over(Order by Sales desc) twoBucket,
+NTILE(3) over(Order by Sales desc) twoBucket,
+NTILE(2) over(Order by Sales desc) twoBucket,
+NTILE(1) over(Order by Sales Desc) OneBucket
+from Sales.Orders
+
+--Ntile usecase
+-- Data Segmentation
+-- ETL or Load balancing
+
+--Segment all orders into 3 categories: high , medium and low sales
+Select
+*,
+Case when Buckets = 1 then 'High'
+	 when Buckets = 2 then 'Medium'
+	 when Buckets = 3 Then 'Low'
+End SalesSegmentations
+from ( 
+	Select
+		OrderID,
+		Sales,
+		NTIlE(3) over(Order by Sales Desc) Buckets
+	from Sales.Orders
+)t 
+
+--Equializing Load
+-- Inorder to export the data, divide the orders into 2 groups
+
+Select
+NTIlE(2) over (Order by OrderID) Buckets,
+*
+from Sales.Orders
+
+--Percentage- Based Ranking
+--Cume_Dist 
+--Percent_Rank
+
+--cumilative Distribution
+--Find the products that fall within the highest 40 percent
+-- of prices
+
+Select 
+*,
+Concat(DistRank * 100, '%') DistrankPerc
+from (
+	Select
+		Product, 
+		Price,
+		PERCENT_RANK() over (Order by Price Desc) DistRank
+	from Sales.Products
+	)t
+where DistRank <= 0.4
+
+--Value window functions
+
+--Analyze the month-over-month performance by finding th percentage
+--change in sales between the current and previous months
+
+Select
+*,
+CurrentMonthSales - PreviousMonthSales As Mom_change,
+Round(cast((CurrentMonthSales - PreviousMonthSales) As Float)/PreviousMonthSales * 100, 1) As Mom_Percentage
+from (
+Select
+	Month(OrderDate) OrderMonth,
+	Sum(Sales) CurrentMonthSales,
+	Lag(Sum(Sales)) over(order by Month(OrderDate)) PreviousMonthSales
+from Sales.Orders
+Group by 
+	Month(OrderDate)
+)t
+ 
+-- Customer Retention Analysis
+-- Analyze customer loyalty by ranking customers
+--based on the average number of days between orders
+
+Select
+CustomerID,
+Avg(DaysUntilNextOrder ) AvgDays,
+Rank() over (Order by Coalesce(Avg(DaysUntilNextOrder), 99999)) RankAvg
+from(
+	Select 
+		OrderID,
+		CustomerID,
+		OrderDate CurrentOrder,
+		day(OrderDate) as Orderdays,
+		Lead(OrderDate) over(Partition by CustomerID Order by OrderDate) NextOrder,
+		DateDiff(day,OrderDate,Lead(OrderDate) over (Partition by CustomerID Order by OrderDate)) DaysUntilNextOrder
+	from Sales.Orders
+)t
+group by CustomerID
+
+--Find the lowest and highest Sales for each product
+-- find the difference in sales between the current and the lowest sales
+
+Select
+	OrderID,
+	ProductID,
+	Sales,
+	First_Value(Sales) over (Partition by ProductID Order by Sales) LowestSales,
+	LAST_VALUE(Sales) over (Partition by ProductID Order by Sales 
+	Rows Between current row and unbounded following ) HighSales,
+	First_Value(Sales) over (Partition by ProductID Order by Sales desc) HighestSales2,
+	Sales - First_Value(Sales) over (Partition by ProductID Order by Sales) as SalesDifference
+from Sales.Orders
+
+--Window Functions Finished and 
+--Congrates 🎉Sql Intermediate course completed.
 
