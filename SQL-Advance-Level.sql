@@ -146,4 +146,140 @@ and Salary > all (Select Salary from Sales.Employees where Gender = 'M')
 
 --Good work Subqyery Concept Completed :)
 
+--Comman Table Expression
+-- Temporary, named result set virtual table that
+--can be used multiple times within your query to 
+-- simplify and organize complex query.
+
+--CTE Types :- Non Recursive CTE and Recursive CTE
+--Non-Recursive CTE :- Standalone CTE and Nested CTE
+
+-- Standalone CTE:-
+--Defined and Used Independently.
+--Runs Independently as it is self-contaoned 
+-- and doesn't rely  on other CTEs or Queries.
+--Mini Project
+--Task:- #1 :- find the total sales per customer.
+
+with CTE_Total_Sales as 
+(
+Select
+	CustomerID,
+	Sum(Sales)  as TotalSales
+from Sales.Orders
+Group by CustomerID
+)
+ --Multiple Standalone CTE
+--#2 Find the last order date per customer.
+, CTE_Last_Order as
+(
+Select
+	CustomerID,
+	max(OrderDate) as Last_Order
+from Sales.Orders
+group by CustomerID
+)
+-- #3 Rank the customers based on total sales per cusotmer.(Nested CTE)
+, CTE_Customer_Rank as
+(
+Select
+CustomerID,
+TotalSales,
+Rank() over(order by TotalSales desc) as CustomerRank
+from CTE_Total_Sales
+)
+--Step #4 Segment customers based on their total sales.(Nested CTE)
+,CTE_Customer_Segments as
+(
+Select 
+CustomerID,
+TotalSales,
+case when TotalSales > 100 then 'High'
+     when TotalSales > 50 then 'Medium'
+	 else 'Low'
+End CustomerSegments
+from CTE_Total_Sales
+)
+--Main Query
+Select
+c.CustomerID,
+c.FirstName,
+c.LastName,
+cts.TotalSales,
+clo.Last_Order,
+ccr.CustomerRank,
+ccs.CustomerSegments
+from Sales.Customers c
+Left join CTE_Total_Sales cts
+on cts.CustomerID = c.CustomerID
+Left join CTE_Last_Order clo
+on clo.CustomerID = c.CustomerID
+left join CTE_Customer_Rank ccr
+on ccr.CustomerID = c.CustomerID
+left join CTE_Customer_Segments ccs
+on ccs.CustomerID = c.CustomerID
+
+--CTE Stores table in cache memory
+--we  cannot use ORDER BY directly within CTE.
+ 
+ --Nested CTE
+ --CTE inside another CTE so it can't run independently
+
+ --Rank the customers based on total sales per cusotmer.
+
+ --Best Practise 
+ -- Rethinck and refactor your CTEs Before starting a new one.
+ --Don't use More than 5 CTEs in one query; Otherwise, you code will be hard to understand and maintain.
+ 
+ --Recursive CTE
+ --Task:- Generate a recursive numbers from 1 to 20
+ WITH Series as (
+	--Anchor query
+	SELECT
+	1 as MyNumber
+	UNION ALL
+	--Recursive query
+	SELECT
+	MyNumber + 1
+	From Series
+	WHERE MyNumber < 20
+)
+--Main query
+SELECT *
+FROM Series
+Option (MAXRECURSION 20)
+
+--TASK :- SHOW THE EMPLOYEE Heirarchy by displaying 
+--each employee's level within the organization.
+
+With CTE_Emp_Hierarchy as
+(
+	--Anchor query
+	Select
+		EmployeeID,
+		FirstName,
+		ManagerID,
+		1 as Level 
+	from Sales.Employees
+	where ManagerID is null
+	UNION All
+	--Recursive Query
+	Select
+		e.EmployeeID,
+		e.FirstName,
+		e.ManagerID,
+		Level +1
+	from Sales.Employees as e
+	Inner join CTE_Emp_Hierarchy ceh
+	on e.ManagerID= ceh.EmployeeID
+)
+
+--Main Query
+Select
+*
+from CTE_Emp_Hierarchy
+
+
+
+
 
