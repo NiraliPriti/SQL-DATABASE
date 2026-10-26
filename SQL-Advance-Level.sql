@@ -279,7 +279,180 @@ Select
 *
 from CTE_Emp_Hierarchy
 
+--Chapter  9 . 3 Views
+-- Create /Update / Drop
+
+--Find The running total of sales for each month
+
+WITH CTE_Monthly_Summary as (
+	Select 
+	DateTrunc(month, OrderDate) OrderMonth,
+	Sum(Sales) TotalSales,
+	Count(OrderID) TotalOrders,
+	SUM(Quantity) TotalQuantities
+	from Sales.Orders
+	Group by DateTrunc(month, OrderDate)
+)
+Select
+OrderMonth,
+TotalSales,
+Sum(TotalSales) over(Order by OrderMonth) as RunningTotal
+from CTE_Monthly_Summary
 
 
+Create VIEW Sales.V_Monthly_Summary as 
+(
+	Select 
+	DateTrunc(month, OrderDate) OrderMonth,
+	Sum(Sales) TotalSales,
+	Count(OrderID) TotalOrders,
+	SUM(Quantity) TotalQuantities
+	from Sales.Orders
+	Group by DateTrunc(month, OrderDate)
+) 
+ Select 
+ *
+ from V_Monthly_Summary 
+
+SELECT 
+OrderMonth,
+TotalSales,
+Sum(TotalSales) over(Order by OrderMonth) as RunningTotal
+from V_Monthly_Summary
+
+Drop View V_Monthly_Summary
+
+--Create  or Replace VIEW Sales.V_Monthly_Summary as  -- this will not work in Sql server THis will work on Postgre sql Server 
+
+-- for sql server  therer two ways first drop view and recreate or using TSQL
+-- Tsql stands for transaction sql 
+if Object_ID ('Sales.V_Monthly_Summary','V') is not null
+	drop view Sales.V_Monthly_Summary;
+Go 
+Create VIEW Sales.V_Monthly_Summary as 
+(
+	Select 
+	DateTrunc(month, OrderDate) OrderMonth,
+	Sum(Sales) TotalSales,
+	Count(OrderID) TotalOrders,
+	SUM(Quantity) TotalQuantities
+	from Sales.Orders
+	Group by DateTrunc(month, OrderDate)
+) 
 
 
+--Task:-   Provide a view that combine details from
+--Orders, products, customers and employees
+CREATE VIEW Sales.V_Order_Details as (
+	SELECT
+	o.OrderID,
+	o.OrderDate,
+	p.Product,
+	p.Category,
+	Coalesce(c.FirstName, ' ') + ' ' + Coalesce(c.LastName, ' ') CustomerName,
+	c.Country CustomerCountry,
+	Coalesce(e.FirstName, ' ') + ' ' + Coalesce(e.LastName, ' ') SalesName,
+	e.Department,
+	o.Sales,
+	o.Quantity
+	from Sales.Orders o
+	left join Sales.Products p
+	on p.ProductID = o.ProductID
+	left join Sales.Customers c
+	on c.CustomerID = o.CustomerID
+	Left Join Sales.Employees e
+	on e.EmployeeID = o.SalesPersonID
+)
+
+Select * from
+Sales.V_Order_Details
+
+--# 3 use case views security
+--Task :- Provide a view for the EU Sales team
+--That combine details from all tables 
+--and excludes data related to the usa.
+create view Sales.V_OrderDetails_EU as (
+	SELECT
+	o.OrderID,
+	o.OrderDate,
+	p.Product,
+	p.Category,
+	Coalesce(c.FirstName, ' ') + ' ' + Coalesce(c.LastName, ' ') CustomerName,
+	c.Country CustomerCountry,
+	Coalesce(e.FirstName, ' ') + ' ' + Coalesce(e.LastName, ' ') SalesName,
+	e.Department,
+	o.Sales,
+	o.Quantity
+	from Sales.Orders o
+	left join Sales.Products p
+	on p.ProductID = o.ProductID
+	left join Sales.Customers c
+	on c.CustomerID = o.CustomerID
+	Left Join Sales.Employees e
+	on e.EmployeeID = o.SalesPersonID
+	where c.Country != 'USA'
+)
+
+SELECT * FROM Sales.V_OrderDetails_EU
+
+--#4 Use case Flexibility & dynamic
+-- # 5 Use vase :- Multiple language
+--# 6 Use case :- Virtual Sata Marts in DWH
+
+--ch 9 - 4 CTAs Tables & Temp Tables
+
+-- CTAS :- Create table as per query
+--Create/Insert vs CTAS
+
+--Create :- Define the structure of table
+-- Insert | Insert data into the table.
+
+--#1 Step create empty table
+--#2 Step Insert data 
+
+ -- In ctas #1 step 
+
+
+ --Create Table Name as 
+ --(
+	--SELECT
+	--FROM
+	--WHERE
+--)
+-- MY SQL | POSTGRES | ORACLE
+--SQL SERVER
+
+SELECT
+INTO NEW TABLE
+FROM
+WHERE
+
+--#1 usecase
+-- Optimize Performance
+
+SELECT
+	DATENAME(MONTH, OrderDate) OrderMonth,
+	count(OrderID) TotalOrders
+into Sales.MonthlyOrders
+from Sales.Orders
+group by DateName(Month, OrderDate)
+
+SELECT * from Sales.MonthlyOrders
+
+DROP table Sales.MonthlyOrders
+
+--TSQL 
+If OBJECT_ID ('Sales.MonthlyOrders' , 'U') is not null
+	DROP Table Sales.MonthlyOrders;
+GO
+SELECT
+	DATENAME(MONTH, OrderDate) OrderMonth,
+	count(OrderID) TotalOrders
+into Sales.MonthlyOrders
+from Sales.Orders
+group by DateName(Month, OrderDate)
+
+-- #2 Use case 
+--Creating a SnapShot
+-- #3 Usecase :- Physical Data Marts in DWH
+--Temparary tables
