@@ -456,3 +456,20 @@ group by DateName(Month, OrderDate)
 --Creating a SnapShot
 -- #3 Usecase :- Physical Data Marts in DWH
 --Temparary tables
+
+SELECT
+*
+INTO #Orders
+FROM Sales.Orders
+
+DELETE FROM #Orders
+where OrderStatus = 'Delivered'
+
+SELECT
+*
+into Sales.OrdersTest
+FROM #Orders
+
+Select
+*
+from Sales.OrdersTest
