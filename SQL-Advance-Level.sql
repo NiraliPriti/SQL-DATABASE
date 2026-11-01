@@ -594,6 +594,36 @@ Drop Procedure GetCustomerSummaryGermany
 Select * FROM Sales.Customers
 
 -- Chapter 9 - 6 TRIGGERS
+-- Special stored Procedure (set of statements)
+-- that automatically runs in response to certain events on a particular table or view in a database.
 
+--Trigger use case loging
+
+CREATE TABLE Sales.EmployeeLogs (
+	LogID INT IDENTITY(1,1) PRIMARY KEY,
+	EmployeeID INT,
+	LogMessage VARCHAR(255),
+	LogDate DATE
+)
+  
+Create TRIGGER trg_AfterInsertEmployee ON Sales.Employees
+AFTER INSERT
+AS
+BEGIN
+	INSERT INTO Sales.EmployeeLogs (EmployeeID, LogMessage, LogDate)
+	Select
+	EmployeeID,
+	'New Employee Added = ' + Cast(EmployeeID as Varchar),
+	GETDATE()
+	FROM INSERTED
+END
+
+Select * from Sales.EmployeeLogs
+
+Insert into Sales.Employees 
+Values
+(7, 'John', 'Doe','HR', '1988-01-12', 'f',8000, 3)
+
+--Chapter 10 - 1 SQL Indexes
 
 
