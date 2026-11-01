@@ -473,3 +473,127 @@ FROM #Orders
 Select
 *
 from Sales.OrdersTest
+
+
+--Chapter 9 - 5 Stored Procedure
+--Procedure SYNTEX
+CREATE PROCEDURE ProcedureName AS
+BEGIN
+
+END
+
+EXECUTE ProcedureName
+--Task 
+--Step 1 : Write a Query
+-- For US Customers Find the Total Number of Customers
+--And the Average Score
+
+SELECT
+	Count(*) TotalCustomerrs,
+	Avg(Score) AvgScore
+from Sales.Custome rs
+where Country = 'USA'
+
+--Step 2  Turning the Query Into A stored Procedure
+
+Create Procedure GetCustomerSummary as
+BEGIN
+SELECT
+	Count(*) TotalCustomerrs,
+	Avg(Score) AvgScore
+from Sales.Customers
+where Country = 'USA'
+END
+
+use SalesDB
+-- Step 3 :- Execute the stored procedure
+ EXEC GetCustomerSummary
+
+ --STep 4
+CREATE PROCEDURE GetCustomerSummaryGermany as
+BEGIN
+SELECT
+	Count(*) TotalCustomerrs,
+	Avg(Score) AvgScore
+from Sales.Customers
+where Country = 'Germany'
+end
+
+EXEC GetCustomerSummaryGermany
+
+
+ALTER Procedure GetCustomerSummary @Country NVARCHAR(50) = 'USA'
+as
+BEGIN
+	BEGIN  TRY 
+		DECLARE @TotalCustomers INT, @AvgScore Float;
+
+		--===========================
+		--Step 1 Prepare & Clean Data
+		--===========================
+		IF EXISTS (Select 1 From Sales.Customers where Score is NULL AND  Country = @Country)
+		BEGIN 
+			PRINT('Updating NULL Score to 0 ');
+			UPDATE Sales.Customers
+			SET Score = 0
+			where Score IS NULL and Country = @Country;
+		END
+
+		ELSE
+		BEGIN	
+			PRINT('No Null Score Found');
+		END;
+
+		--===========================
+		--Step 2: Generating Summary report
+		--===========================
+		-- Calculate Total Customers and Average Score for specific country
+		SELECT
+			@TotalCustomers = Count(*),
+			@AvgScore = AVG(Score) 
+		from Sales.Customers
+		where Country = @Country;
+
+		Print 'Total Customers from ' + @Country + ':' + CAST(@TotalCustomers as NVARCHAR);
+		Print 'Average Score From ' + @Country + ':'+ CAST(@AvgScore as NVARCHAR);
+		--Find total no of orders and total sales
+
+		Select
+			Count(OrderID) TotalOrders,
+			SUM(Sales) TotalSales
+		from Sales.Orders o
+		join Sales.Customers c
+		on c.CustomerID = o.CustomerID
+		where c.Country = @Country;
+
+		END TRY
+	BEGIN CATCH
+		--===========================
+		-- Error handling
+		--===========================
+		PRINT('An Error occured.')
+		PRINT('Error Message: ' + ERROR_MESSAGE());
+		PRINT('Error Number: ' + CAST(ERROR_NUMBER() as NVARCHAR));
+		PRINT('Error Line : ' + CAST(ERROR_LINE() as NVARCHAR));
+		Print('Error Procedure : ' + ERROR_PROCEDURE());
+
+	END CATCH
+END
+GO 
+
+
+EXEC GetCustomerSummary
+EXEC GetCustomerSummary @Country = 'Germany'
+
+EXEC GetCustomerSummary @Country = 'USA'
+
+Drop Procedure GetCustomerSummaryGermany
+
+--Multiple Quey
+
+Select * FROM Sales.Customers
+
+-- Chapter 9 - 6 TRIGGERS
+
+
+
